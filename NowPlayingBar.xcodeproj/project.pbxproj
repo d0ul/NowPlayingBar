@@ -6,6 +6,25 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		95487A313009CB5F004FA791 /* MediaRemoteAdapter in Frameworks */ = {isa = PBXBuildFile; productRef = 95487A303009CB5F004FA791 /* MediaRemoteAdapter */; };
+		95487A323009CB7C004FA791 /* MediaRemoteAdapter in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 95487A303009CB5F004FA791 /* MediaRemoteAdapter */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		95487A333009CB7C004FA791 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				95487A323009CB7C004FA791 /* MediaRemoteAdapter in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		95487A1A3009CAE3004FA791 /* NowPlayingBar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = NowPlayingBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +42,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				95487A313009CB5F004FA791 /* MediaRemoteAdapter in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -55,6 +75,7 @@
 				95487A163009CAE3004FA791 /* Sources */,
 				95487A173009CAE3004FA791 /* Frameworks */,
 				95487A183009CAE3004FA791 /* Resources */,
+				95487A333009CB7C004FA791 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -65,6 +86,7 @@
 			);
 			name = NowPlayingBar;
 			packageProductDependencies = (
+				95487A303009CB5F004FA791 /* MediaRemoteAdapter */,
 			);
 			productName = NowPlayingBar;
 			productReference = 95487A1A3009CAE3004FA791 /* NowPlayingBar.app */;
@@ -82,6 +104,7 @@
 				TargetAttributes = {
 					95487A193009CAE3004FA791 = {
 						CreatedOnToolsVersion = 26.6;
+						LastSwiftMigration = 2660;
 					};
 				};
 			};
@@ -94,6 +117,9 @@
 			);
 			mainGroup = 95487A113009CAE3004FA791;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				95487A2F3009CB5F004FA791 /* XCRemoteSwiftPackageReference "mediaremote-adapter" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 95487A1B3009CAE3004FA791 /* Products */;
 			projectDirPath = "";
@@ -246,8 +272,11 @@
 		95487A263009CAE3004FA791 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = NowPlayingBar;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -255,6 +284,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -268,6 +299,8 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "NowPlayingBar/NowPlayingBar-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -276,8 +309,11 @@
 		95487A273009CAE3004FA791 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_APPICON_NAME = NowPlayingBar;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -285,6 +321,8 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -298,6 +336,7 @@
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "NowPlayingBar/NowPlayingBar-Bridging-Header.h";
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -325,6 +364,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		95487A2F3009CB5F004FA791 /* XCRemoteSwiftPackageReference "mediaremote-adapter" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ejbills/mediaremote-adapter.git";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		95487A303009CB5F004FA791 /* MediaRemoteAdapter */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 95487A2F3009CB5F004FA791 /* XCRemoteSwiftPackageReference "mediaremote-adapter" */;
+			productName = MediaRemoteAdapter;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 95487A123009CAE3004FA791 /* Project object */;
 }
