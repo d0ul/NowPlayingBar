@@ -18,11 +18,14 @@ final class NowPlayingModel: ObservableObject {
     private var rate: Double = 0
     private var ticker: Timer?
 
+    private var lastDiscordSignature: String?
+
     func update(_ np: NowPlaying?) {
         guard let np else {
             title = "Nothing Playing"; artist = ""; album = ""; appName = ""; isPlaying = false; artwork = nil
             duration = 0; elapsed = 0; rate = 0
             ticker?.invalidate(); ticker = nil
+            updateDiscordActivity()
             return
         }
         title = np.title ?? "Unknown"
@@ -42,6 +45,7 @@ final class NowPlayingModel: ObservableObject {
         }
 
         restartTicker()
+        updateDiscordActivity()
     }
 
     func commitSeek(to time: TimeInterval) {
@@ -49,6 +53,8 @@ final class NowPlayingModel: ObservableObject {
         baseElapsed = time
         baseTimestamp = Date()
         elapsed = time
+        lastDiscordSignature = nil
+        updateDiscordActivity()
     }
 
     private func restartTicker() {
@@ -58,6 +64,56 @@ final class NowPlayingModel: ObservableObject {
             guard let self, !self.isScrubbing else { return }
             let projected = self.baseElapsed + self.rate * Date().timeIntervalSince(self.baseTimestamp)
             self.elapsed = min(max(projected, 0), self.duration)
+        }
+    }
+
+
+    private var trackSequence = 0
+
+    private func updateDiscordActivity() {
+        guard DiscordRPC.shared.isEnabled else { return }
+
+        guard !title.isEmpty, title != "Nothing Playing" else {
+            trackSequence += 1
+            let signature = "cleared"
+            if lastDiscordSignature != signature {
+                lastDiscordSignature = signature
+                DiscordRPC.shared.clearActivity()
+            }
+            return
+        }
+
+        let signature = [title, artist, album, String(isPlaying), String(Int(duration)), String(Int(baseElapsed))]
+            .joined(separator: "|")
+        guard signature != lastDiscordSignature else { return }
+        lastDiscordSignature = signature
+
+        trackSequence += 1
+        let sequence = trackSequence
+
+        let start = isPlaying ? baseTimestamp.addingTimeInterval(-baseElapsed) : nil
+        let end: Date? = {
+            guard isPlaying, duration > 0 else { return nil }
+            return baseTimestamp.addingTimeInterval(duration - baseElapsed)
+        }()
+
+        let capturedTitle = title
+        let capturedArtist = artist
+        let capturedAlbum = album
+
+        ITunesArtworkLookup.shared.lookupArtwork(title: capturedTitle, artist: capturedArtist) { [weak self] artworkURL in
+            DispatchQueue.main.async {
+                guard let self, self.trackSequence == sequence else { return }
+                DiscordRPC.shared.setActivity(
+                    details: capturedTitle,
+                    state: capturedArtist.isEmpty ? nil : capturedArtist,
+                    largeImageURL: artworkURL,
+                    largeImageText: capturedAlbum.isEmpty ? nil : capturedAlbum,
+                    startTimestamp: start,
+                    endTimestamp: end,
+                    isPlaying: self.isPlaying
+                )
+            }
         }
     }
 }

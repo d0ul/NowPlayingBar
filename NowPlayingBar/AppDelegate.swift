@@ -11,6 +11,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let model = NowPlayingModel()
     private var contentHostView: NSView!
 
+    private var lastTitle: String?
+    private var lastAlbum: String?
+    private var lastArtwork: NSImage?
+    private var lastIsPlaying = false
+
     private let panelSize = NSSize(width: 300, height: 214)
     private let cornerRadius: CGFloat = 20
     private let screenMargin = NSSize(width: 12, height: 8)
@@ -22,6 +27,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ n: Notification) {
         NSApp.setActivationPolicy(.accessory)
+
+        DiscordRPC.shared.isEnabled = AppSettings.isDiscordRPCEnabled
 
         item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         item.button?.image = fallbackIcon(isPlaying: false)
@@ -69,7 +76,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func apply(_ np: NowPlaying?) {
         model.update(np)
-        updateStatusIcon(title: np?.title, artwork: model.artwork, isPlaying: np?.isPlaying ?? false)
+        lastTitle = np?.title
+        lastAlbum = np?.album
+        lastArtwork = model.artwork
+        lastIsPlaying = np?.isPlaying ?? false
+        updateStatusIcon(title: lastTitle, album: lastAlbum, artwork: lastArtwork, isPlaying: lastIsPlaying)
     }
 
     @objc private func statusItemClicked() {
@@ -81,11 +92,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    // MARK: - Context menu
+
     private func showContextMenu() {
         let menu = NSMenu()
 
+        let displayModeItem = NSMenuItem(
+            title: String(localized: "menu.displayMode.title", defaultValue: "Display Mode"),
+            action: nil,
+            keyEquivalent: ""
+        )
+        displayModeItem.submenu = makeDisplayModeSubmenu()
+        menu.addItem(displayModeItem)
+
+
+        let discordItem = NSMenuItem(
+            title: String(localized: "menu.discord.title", defaultValue: "Use Discord RPC"),
+            action: #selector(toggleDiscordRPC),
+            keyEquivalent: ""
+        )
+        discordItem.target = self
+        discordItem.state = AppSettings.isDiscordRPCEnabled ? .on : .off
+        menu.addItem(discordItem)
+
         let loginItem = NSMenuItem(
-            title: "Launch at Login",
+            title: String(localized: "menu.launchAtLogin.title", defaultValue: "Launch at Login"),
             action: #selector(toggleLaunchAtLogin),
             keyEquivalent: ""
         )
@@ -96,11 +127,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(.separator())
 
         let quitItem = NSMenuItem(
-            title: "Quit NowPlayingBar",
+            title: String(localized: "menu.quit.title", defaultValue: "Quit NowPlayingBar"),
             action: #selector(quit),
             keyEquivalent: "q"
         )
         quitItem.target = self
+        quitItem.image = symbolImage("xmark.rectangle")
         menu.addItem(quitItem)
 
         item.menu = menu
@@ -108,6 +140,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         item.menu = nil
     }
 
+    private func makeDisplayModeSubmenu() -> NSMenu {
+        let submenu = NSMenu()
+        let current = AppSettings.displayMode
+        for mode in MenuBarDisplayMode.allCases {
+            let menuItem = NSMenuItem(
+                title: mode.menuTitle,
+                action: #selector(selectDisplayMode(_:)),
+                keyEquivalent: ""
+            )
+            menuItem.target = self
+            menuItem.representedObject = mode.rawValue
+            menuItem.state = (mode == current) ? .on : .off
+            submenu.addItem(menuItem)
+        }
+        return submenu
+    }
+
+    private func symbolImage(_ name: String) -> NSImage? {
+        let config = NSImage.SymbolConfiguration(pointSize: 13, weight: .regular)
+        let image = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+            .withSymbolConfiguration(config)
+        image?.isTemplate = true
+        return image
+    }
+
+    @objc private func selectDisplayMode(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String,
+              let mode = MenuBarDisplayMode(rawValue: raw) else { return }
+        AppSettings.displayMode = mode
+        updateStatusIcon(title: lastTitle, album: lastAlbum, artwork: lastArtwork, isPlaying: lastIsPlaying)
+    }
+
+    @objc private func toggleDiscordRPC() {
+        let newValue = !AppSettings.isDiscordRPCEnabled
+        AppSettings.isDiscordRPCEnabled = newValue
+        DiscordRPC.shared.isEnabled = newValue
+    }
 
     private var isLaunchAtLoginEnabled: Bool {
         SMAppService.mainApp.status == .enabled
@@ -129,27 +198,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.terminate(nil)
     }
 
-
-    private func updateStatusIcon(title: String?, artwork: NSImage?, isPlaying: Bool) {
+    private func updateStatusIcon(title: String?, album: String?, artwork: NSImage?, isPlaying: Bool) {
+        let mode = AppSettings.displayMode
+        let displayText = mode.text(title: title, album: album)
         item.button?.toolTip = title
         item.button?.imagePosition = .imageLeading
-        item.button?.title = title.map { String($0.prefix(24)) } ?? ""
-        item.button?.image = artwork.map(makeArtworkIcon) ?? fallbackIcon(isPlaying: isPlaying)
+        item.button?.title = String(displayText.prefix(24))
+
+        if mode == .titleOnly {
+            item.button?.image = nil
+        } else {
+            item.button?.image = artwork.map(makeArtworkIcon) ?? fallbackIcon(isPlaying: isPlaying)
+        }
     }
 
     private func makeArtworkIcon(from artwork: NSImage) -> NSImage {
         let icon = NSImage(size: statusIconSize)
         icon.lockFocus()
         NSBezierPath(roundedRect: NSRect(origin: .zero, size: statusIconSize), xRadius: 4, yRadius: 4).addClip()
-        artwork.draw(
-            in: NSRect(origin: .zero, size: statusIconSize),
-            from: .zero,
-            operation: .sourceOver,
-            fraction: 1.0
-        )
+        artwork.draw(in: NSRect(origin: .zero, size: statusIconSize), from: sourceRectForAspectFill(of: artwork), operation: .sourceOver, fraction: 1.0)
         icon.unlockFocus()
         icon.isTemplate = false
         return icon
+    }
+
+    private func sourceRectForAspectFill(of image: NSImage) -> NSRect {
+        let size = image.size
+        guard size.width > 0, size.height > 0 else {
+            return NSRect(origin: .zero, size: size)
+        }
+        let side = min(size.width, size.height)
+        let x = (size.width - side) / 2
+        let y = (size.height - side) / 2
+        return NSRect(x: x, y: y, width: side, height: side)
     }
 
     private func fallbackIcon(isPlaying: Bool) -> NSImage {
@@ -160,7 +241,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         image?.isTemplate = true
         return image ?? NSImage(size: statusIconSize)
     }
-
 
     private func toggle() {
         if panel.isVisible {
